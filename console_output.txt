@@ -1,0 +1,169 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] --------------< org.tradereport:borse-kodeoppgave-folio >---------------
+[INFO] Building borse-kodeoppgave-folio 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- exec:3.5.1:java (default-cli) @ borse-kodeoppgave-folio ---
+
+================================================================================
+TRADE REPORT 2024 - NORWAY & EU (Goods, HS4)
+================================================================================
+
+Norway (NO):
+  Trade balance (Exports - Imports): -25,872,872.00 NZD
+  Most imported product: Fertilizers; mineral or chemical, containing 2 or 3 of the elements nitrogen, phosphorus, potassium; other fertilisers; goods of chapter 31 in tablets or packages of gross weight not exceeding 10kg (3105) – 9,814,037.00 NZD
+  Most exported product: Aluminium; unwrought (7601) – 17,325,213.00 NZD
+
+--- EU MEMBER COUNTRIES ---
+
+Austria (AT):
+  Trade balance (Exports - Imports): -281,491,264.00 NZD
+  Most imported product: Base metal mountings, fittings and similar articles for furniture, doors, staircases, windows, trunks, chests etc, castors with mountings of base metal, automatic door closers of base metal (8302) – 21,843,995.00 NZD
+  Most exported product: Confidential items (9809) – 17,952,881.00 NZD
+
+Belgium (BE):
+  Trade balance (Exports - Imports): -243,428,834.00 NZD
+  Most imported product: Human blood; animal blood for therapeutic, prophylactic or diagnostic uses; antisera, other blood fractions, immunological products, modified or obtained by biotechnological processes; vaccines, toxins, cultures of micro-organisms (excluding yeasts) etc (3002) – 95,766,833.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 149,636,250.00 NZD
+
+Bulgaria (BG):
+  Trade balance (Exports - Imports): 2,422,919.00 NZD
+  Most imported product: Sunflower seeds; whether or not broken (1206) – 2,441,923.00 NZD
+  Most exported product: Wine of fresh grapes, including fortified wines; grape must other than that of heading no. 2009 (2204) – 7,159,146.00 NZD
+
+Croatia (HR):
+  Trade balance (Exports - Imports): -4,973,690.00 NZD
+  Most imported product: Electric transformers, static converters (e.g. rectifiers) and inductors (8504) – 2,867,990.00 NZD
+  Most exported product: Motorcycles (including mopeds) and cycles; fitted with an auxiliary motor, with or without side-cars; side-cars (8711) – 1,255,881.00 NZD
+
+Cyprus (CY):
+  Trade balance (Exports - Imports): 8,178,753.00 NZD
+  Most imported product: Medicaments; (not goods of heading no. 3002, 3005 or 3006) consisting of mixed or unmixed products for therapeutic or prophylactic use, put up in measured doses (incl. those in the form of transdermal admin. systems) or packed for retail sale (3004) – 2,242,326.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 6,452,845.00 NZD
+
+Czechia (CZ):
+  Trade balance (Exports - Imports): -181,382,151.00 NZD
+  Most imported product: Motor cars and other motor vehicles; principally designed for the transport of persons (other than those of heading no. 8702), including station wagons and racing cars (8703) – 56,447,664.00 NZD
+  Most exported product: Wool, not carded or combed (5101) – 15,103,093.00 NZD
+
+Denmark (DK):
+  Trade balance (Exports - Imports): -220,080,965.00 NZD
+  Most imported product: Orthopaedic appliances; including crutches, surgical belts and trusses; splints and other fracture appliances; artificial parts of the body; hearing aids and other which are worn, carried or implanted in the body to compensate for a defect or disability (9021) – 86,267,357.00 NZD
+  Most exported product: Human blood; animal blood for therapeutic, prophylactic or diagnostic uses; antisera, other blood fractions, immunological products, modified or obtained by biotechnological processes; vaccines, toxins, cultures of micro-organisms (excluding yeasts) etc (3002) – 31,090,620.00 NZD
+
+Estonia (EE):
+  Trade balance (Exports - Imports): -6,938,352.00 NZD
+  Most imported product: Buildings; prefabricated (9406) – 3,346,564.00 NZD
+  Most exported product: Wood sawn or chipped lengthwise, sliced or peeled, whether or not planed, sanded or finger-jointed, of a thickness exceeding 6mm (4407) – 5,808,595.00 NZD
+
+Finland (FI):
+  Trade balance (Exports - Imports): -182,292,918.00 NZD
+  Most imported product: Meat of swine; fresh, chilled or frozen (0203) – 22,959,531.00 NZD
+  Most exported product: Wine of fresh grapes, including fortified wines; grape must other than that of heading no. 2009 (2204) – 2,427,015.00 NZD
+
+France (FR):
+  Trade balance (Exports - Imports): -935,406,606.00 NZD
+  Most imported product: Aircraft n.e.c. in heading no. 8801, except unmanned aircraft of heading 8806, (e.g. helicopters, aeroplanes); spacecraft (including satellites) and suborbital and spacecraft launch vehicles (8802) – 206,675,266.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 106,450,005.00 NZD
+
+Germany (DE):
+  Trade balance (Exports - Imports): -2,244,810,910.00 NZD
+  Most imported product: Motor cars and other motor vehicles; principally designed for the transport of persons (other than those of heading no. 8702), including station wagons and racing cars (8703) – 357,661,269.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 209,381,414.00 NZD
+
+Greece (GR):
+  Trade balance (Exports - Imports): 19,661,484.00 NZD
+  Most imported product: Medicaments; (not goods of heading no. 3002, 3005 or 3006) consisting of mixed or unmixed products for therapeutic or prophylactic use, put up in measured doses (incl. those in the form of transdermal admin. systems) or packed for retail sale (3004) – 15,506,772.00 NZD
+  Most exported product: Molluscs; whether in shell or not, live, fresh, chilled, frozen, dried, salted or in brine; smoked molluscs, whether in shell or not, whether or not cooked before or during the smoking process (0307) – 34,375,824.00 NZD
+
+Hungary (HU):
+  Trade balance (Exports - Imports): -155,907,025.00 NZD
+  Most imported product: Motor cars and other motor vehicles; principally designed for the transport of persons (other than those of heading no. 8702), including station wagons and racing cars (8703) – 32,075,380.00 NZD
+  Most exported product: Telephone sets, including smartphones and other telephones for cellular/wireless networks; other apparatus for the transmission or reception of voice, images or other data (including wired/wireless networks), excluding items of 8443, 8525, 8527, or 8528 (8517) – 1,396,409.00 NZD
+
+Ireland (IE):
+  Trade balance (Exports - Imports): -202,527,633.00 NZD
+  Most imported product: Medicaments; (not goods of heading no. 3002, 3005 or 3006) consisting of mixed or unmixed products for therapeutic or prophylactic use, put up in measured doses (incl. those in the form of transdermal admin. systems) or packed for retail sale (3004) – 87,439,872.00 NZD
+  Most exported product: Wine of fresh grapes, including fortified wines; grape must other than that of heading no. 2009 (2204) – 40,885,160.00 NZD
+
+Italy (IT):
+  Trade balance (Exports - Imports): -1,264,244,016.00 NZD
+  Most imported product: Medicaments; (not goods of heading no. 3002, 3005 or 3006) consisting of mixed or unmixed products for therapeutic or prophylactic use, put up in measured doses (incl. those in the form of transdermal admin. systems) or packed for retail sale (3004) – 96,277,862.00 NZD
+  Most exported product: Tanned or crust hides and skins of bovine (including buffalo) or equine animals, without hair on, whether or not split, but not further prepared (4104) – 61,032,280.00 NZD
+
+Latvia (LV):
+  Trade balance (Exports - Imports): -12,556,346.00 NZD
+  Most imported product: Plywood, veneered panels and similar laminated wood (4412) – 6,508,062.00 NZD
+  Most exported product: Wool, not carded or combed (5101) – 1,970,614.00 NZD
+
+Lithuania (LT):
+  Trade balance (Exports - Imports): -16,257,093.00 NZD
+  Most imported product: Yarn of carded wool, not put up for retail sale (5106) – 5,637,433.00 NZD
+  Most exported product: Wool, not carded or combed (5101) – 14,394,899.00 NZD
+
+Luxembourg (LU):
+  Trade balance (Exports - Imports): -6,205,865.00 NZD
+  Most imported product: Floor coverings of plastics, self-adhesive or not, in rolls or tiles; wall or ceiling coverings of plastics, in rolls of a width not less than 45cm (3918) – 4,419,469.00 NZD
+  Most exported product: Motor cars and other motor vehicles; principally designed for the transport of persons (other than those of heading no. 8702), including station wagons and racing cars (8703) – 1,312,566.00 NZD
+
+Malta (MT):
+  Trade balance (Exports - Imports): -2,444,423.00 NZD
+  Most imported product: Medicaments; (not goods of heading no. 3002, 3005 or 3006) consisting of mixed or unmixed products for therapeutic or prophylactic use, put up in measured doses (incl. those in the form of transdermal admin. systems) or packed for retail sale (3004) – 3,403,874.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 1,425,158.00 NZD
+
+Netherlands (NL):
+  Trade balance (Exports - Imports): 502,202,936.00 NZD
+  Most imported product: Food preparations not elsewhere specified or included (2106) – 43,769,328.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 330,846,189.00 NZD
+
+Poland (PL):
+  Trade balance (Exports - Imports): -246,898,675.00 NZD
+  Most imported product: Turbo-jets, turbo-propellers and other gas turbines (8411) – 46,311,734.00 NZD
+  Most exported product: Fish fillets and other fish meat (whether or not minced); fresh, chilled or frozen (0304) – 85,079,991.00 NZD
+
+Portugal (PT):
+  Trade balance (Exports - Imports): -25,140,767.00 NZD
+  Most imported product: Plastics; plates, sheets, film, foil and strip (not self-adhesive); non-cellular and not reinforced, laminated, supported or similarly combined with other materials, n.e.c. in chapter 39 (3920) – 6,540,342.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 10,475,437.00 NZD
+
+Romania (RO):
+  Trade balance (Exports - Imports): -71,783,188.00 NZD
+  Most imported product: Maize (corn) (1005) – 18,973,782.00 NZD
+  Most exported product: Aluminium; unwrought (7601) – 7,105,425.00 NZD
+
+Slovakia (SK):
+  Trade balance (Exports - Imports): -110,401,632.00 NZD
+  Most imported product: Motor cars and other motor vehicles; principally designed for the transport of persons (other than those of heading no. 8702), including station wagons and racing cars (8703) – 93,011,130.00 NZD
+  Most exported product: Harvesting and threshing machinery, straw and fodder balers, grass or hay mowers; machines for cleaning, sorting or grading eggs, fruit or other agricultural produce, other than machinery of heading no 8437 (8433) – 11,318,729.00 NZD
+
+Slovenia (SI):
+  Trade balance (Exports - Imports): -30,966,792.00 NZD
+  Most imported product: Medicaments; (not goods of heading no. 3002, 3005 or 3006) consisting of mixed or unmixed products for therapeutic or prophylactic use, put up in measured doses (incl. those in the form of transdermal admin. systems) or packed for retail sale (3004) – 8,117,043.00 NZD
+  Most exported product: Iron or steel; articles, n.e.c. in chapter 73 (7326) – 793,885.00 NZD
+
+Spain (ES):
+  Trade balance (Exports - Imports): -430,254,329.00 NZD
+  Most imported product: Olive oil and its fractions; whether or not refined, but not chemically modified (1509) – 59,124,627.00 NZD
+  Most exported product: Molluscs; whether in shell or not, live, fresh, chilled, frozen, dried, salted or in brine; smoked molluscs, whether in shell or not, whether or not cooked before or during the smoking process (0307) – 35,647,513.00 NZD
+
+Sweden (SE):
+  Trade balance (Exports - Imports): -266,336,695.00 NZD
+  Most imported product: Medicaments; (not goods of heading no. 3002, 3005 or 3006) consisting of mixed or unmixed products for therapeutic or prophylactic use, put up in measured doses (incl. those in the form of transdermal admin. systems) or packed for retail sale (3004) – 25,462,444.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 31,971,801.00 NZD
+
+--- EU TOTAL (27 countries) ---
+
+European Union (EU):
+  Trade balance (Exports - Imports): -6,610,264,077.00 NZD
+  Most imported product: Motor cars and other motor vehicles; principally designed for the transport of persons (other than those of heading no. 8702), including station wagons and racing cars (8703) – 849,999,620.00 NZD
+  Most exported product: Meat of sheep or goats; fresh, chilled or frozen (0204) – 925,903,235.00 NZD
+
+Results saved to: D:\PersonalProjects\borse-kodeoppgave-folio\trade_report_2024.csv
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.384 s
+[INFO] Finished at: 2025-09-01T00:37:54+02:00
+[INFO] ------------------------------------------------------------------------

@@ -2,390 +2,405 @@ package org.tradereport;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-// I chose CSV parser library to not reinvent the wheel and write in Java, avoid issues with things such as quoted fields. Commas easier but still.. Also lots of documentation :).
+// I chose CSV parser library to not reinvent the wheel and write in Java, avoid issues with things such as quotation marks, commas etc... Also lots of documentation :).
 // Performs quite alright on large files, however straight BufferedReader or Pandas could maybe be faster in clean data or smaller datasets.
 
-/**
- * Main class for analyzing trade data from CSV files.
- * Processes import/export data for Norway 2024, focusing on Goods with HS4 product codes.
- */
 public class Main {
 
     // Country code for Norway - used to filter data to only Norwegian trade.
-    private static final String NORWAY_ISO2 = "NO";      // keep logic simple for now
+    private static final String NORWAY_CODE = "NO";
+
+    // EU-27 member countries (2024) - ISO2 codes. Just writing codes to avoid parsing country_classification.csv as well.
+    private static final Set<String> EU_COUNTRIES = Set.of(
+            "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE",
+            "FI", "FR", "DE", "GR", "HU", "IE", "IT", "LV",
+            "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK",
+            "SI", "ES", "SE"
+    );
+
+    // Putting country names here associated with codes for printing.
+    private static final Map<String, String> COUNTRY_NAMES = Map.ofEntries(
+            Map.entry("AT", "Austria"),
+            Map.entry("BE", "Belgium"),
+            Map.entry("BG", "Bulgaria"),
+            Map.entry("HR", "Croatia"),
+            Map.entry("CY", "Cyprus"),
+            Map.entry("CZ", "Czechia"),
+            Map.entry("DK", "Denmark"),
+            Map.entry("EE", "Estonia"),
+            Map.entry("FI", "Finland"),
+            Map.entry("FR", "France"),
+            Map.entry("DE", "Germany"),
+            Map.entry("GR", "Greece"),
+            Map.entry("HU", "Hungary"),
+            Map.entry("IE", "Ireland"),
+            Map.entry("IT", "Italy"),
+            Map.entry("LV", "Latvia"),
+            Map.entry("LT", "Lithuania"),
+            Map.entry("LU", "Luxembourg"),
+            Map.entry("MT", "Malta"),
+            Map.entry("NL", "Netherlands"),
+            Map.entry("PL", "Poland"),
+            Map.entry("PT", "Portugal"),
+            Map.entry("RO", "Romania"),
+            Map.entry("SK", "Slovakia"),
+            Map.entry("SI", "Slovenia"),
+            Map.entry("ES", "Spain"),
+            Map.entry("SE", "Sweden"),
+            Map.entry("NO", "Norway")
+    );
 
     // Year prefix for filtering to 2024 data only (format: YYYYMM in the dataset).
-    private static final String YEAR_PREFIX = "2024";    // assignment scope
+    private static final String YEAR_PREFIX = "2024";
 
-    // Default file path - should be overridden by command line arguments in production.
-    // System property or environment variable.
+    // Default file paths.
+    // By default, the program expects the CSV files in the same folder as the program.
+    // (output_csv_full.csv, goods_classification.csv).
+    // May also override using JVM system properties (-Dtrade.data.path=...).
+    // or environment variables (TRADE_DATA_PATH, GOODS_CLASS_PATH, TRADE_RESULTS_PATH).
     private static final String DEFAULT_FILE_PATH = System.getProperty("trade.data.path",
             System.getenv().getOrDefault("TRADE_DATA_PATH", "output_csv_full.csv"));
 
-    // Default path for goods classification file
     private static final String DEFAULT_CLASS_PATH = System.getProperty("goods.classification.path",
             System.getenv().getOrDefault("GOODS_CLASS_PATH", "goods_classification.csv"));
 
+    private static final String DEFAULT_RESULTS_PATH = System.getProperty("trade.results.path",
+            System.getenv().getOrDefault("TRADE_RESULTS_PATH", "trade_report_2024.csv"));
+
+
+    // Simple container for country statistics
+    // Kind of used as a DTO. Way to store stats related to a country.
+    // Using BigDecimal for accurate summation of money values in case of some data with many decimals.
+    // However, double most likely fine too in this particular dataset.
+    static class CountryStats {
+        BigDecimal imports = BigDecimal.ZERO;
+        BigDecimal exports = BigDecimal.ZERO;
+        Map<String, BigDecimal> importsByProduct = new HashMap<>();
+        Map<String, BigDecimal> exportsByProduct = new HashMap<>();
+    }
+
+    // DTO for final computed results of one country.
+    // Separates math logic from printing.
+    record CountryReport(
+            String label,
+            BigDecimal tradeBalance,
+            String topImportCode,
+            BigDecimal topImportValue,
+            String topExportCode,
+            BigDecimal topExportValue
+    ) {}
 
     public static void main(String[] args) {
-
-        //  Get the input path from args.
-        if (args.length == 0) {
-            System.out.println("Usage:");
-            System.out.println("  mvn exec:java -Dexec.args=\"<path/to/output_csv_full.csv>\"");
-            System.out.println("Or set environment variable TRADE_DATA_PATH");
-            System.out.println("Or set system property -Dtrade.data.path=<path>");
-        }
 
         // Use command line argument if provided, otherwise fall back to configurable default.
         String filePath = args.length > 0 ? args[0] : DEFAULT_FILE_PATH;
 
-        // Convert string path to Path object for better file system operations.
+        // Check if input file exists.
         Path csvPath = Paths.get(filePath);
-
-        // Error if file not found.
         if (!Files.exists(csvPath)) {
             System.err.println("File not found: " + csvPath.toAbsolutePath());
             return;
         }
 
-        // Load HS4 descriptions into a map for print.
+        // Load HS4 descriptions/products into a map for print.
         Map<String, String> hs4Descriptions;
         try {
             hs4Descriptions = GoodsClassificationLoader.loadHs4Descriptions(Paths.get(DEFAULT_CLASS_PATH));
-            System.out.println("Loaded " + hs4Descriptions.size() + " HS4 descriptions.");
         } catch (IOException e) {
             throw new RuntimeException("Failed to load goods_classification.csv", e);
         }
 
-        // Variables to hold total import and export values for Norway 2024 (Goods, 4 digit HS4 codes.)
-        // Using BigDecimal for precision, prevents floating point errors when summing monetary values.
-        BigDecimal importsNO = BigDecimal.ZERO;
-        BigDecimal exportsNO = BigDecimal.ZERO;
-
-        // Maps that track total import and export values for each product code.
-        // Key: HS4 product code (String because some codes might not be numbers).
-        java.util.Map<String, BigDecimal> importByProductNO = new java.util.HashMap<>();
-        java.util.Map<String, BigDecimal> exportByProductNO = new java.util.HashMap<>();
-
-        // Using BigDecimal for accurate summation of money values in case of some data with many decimals.
-        // However, double most likely fine too in this particular dataset.
+        // Store all country stats in one map. Key is String, country code. Value is CountryStats object, which is import / export.
+        // One entry for Norway, one for each EU country, and one for combined EU stats.
+        Map<String, CountryStats> allStats = new HashMap<>();
+        allStats.put(NORWAY_CODE, new CountryStats());
+        for (String eu : EU_COUNTRIES) {
+            allStats.put(eu, new CountryStats());
+        }
+        allStats.put("EU", new CountryStats()); // Combined EU stats (aggregate of the 27)
 
         //  Open the file and create a streaming CSV parser.
-        // Try-with-resources ensures both reader and parser are properly closed.
         try (BufferedReader reader = Files.newBufferedReader(csvPath, StandardCharsets.UTF_8);
              CSVParser parser = CSVFormat.DEFAULT.builder()
-                     .setHeader()                   // read column names from first row.
-                     .setSkipHeaderRecord(true)     // skip the header as a data row when iterating data.
-                     .setTrim(true)                 // trim whitespace from around data.
-                     .setIgnoreSurroundingSpaces(true) // Ignore spaces around data.
+                     .setHeader()
+                     .setSkipHeaderRecord(true)
+                     .setTrim(true)
+                     .setIgnoreSurroundingSpaces(true)
                      .build()
                      .parse(reader)) {
 
-            //  Show the headers we detected.
-            System.out.println("Headers detected: " + parser.getHeaderMap().keySet());
-
-            //  Initializes counters for total rows, number of rows shown, and a variable to hold the last row.
-            long total = 0;          // Total count of data rows processed.
-            int shown = 0;           // Counter for sample rows displayed.
-            CSVRecord last = null;   // Keep reference to last row for debugging.
-
-            //  Iterate the rows, print the first 5 rows, and count total rows.
+            //  Iterate rows once, apply filters, and update country/product totals.
             for (CSVRecord r : parser) {
-                total++;
-                last = r; // keep overwriting to always have the last row.
-
-                // Display first 5 rows as a sample of the data structure.
-                if (shown < 5) {
-                    String timeRef     = get(r, "time_ref");      // YYYYMM format date.
-                    String account     = get(r, "account");       // "Imports" or "Exports".
-                    String code        = get(r, "code");          // Product code (HS4).
-                    String countryCode = get(r, "country_code");  // ISO2 country code.
-                    String productType = get(r, "product_type");  // "Goods" or "Services".
-                    String value       = get(r, "value");         // Monetary value.
-                    //Optional field, may not be present in all files.
-                    String status      = getOptional(r, "status"); // Optional status field.
-
-                    // Print the values in a formatted way.
-                    System.out.printf("%s | %s | %s | %s | %s | %s | %s%n",
-                            timeRef, account, code, countryCode, productType, value, status);
-                    // Increment the counter for rows displayed.
-                    shown++;
-                }
-
-                // Filter and aggregate for Norway 2024, Goods, HS4, numeric value.
-
-                // Extract all necessary fields for filtering.
                 String timeRef     = get(r, "time_ref");
-                String productType = get(r, "product_type");
-                String countryCode = get(r, "country_code");
-                String code        = get(r, "code");
                 String account     = get(r, "account");
+                String code        = get(r, "code");
+                String countryCode = get(r, "country_code");
+                String productType = get(r, "product_type");
                 String valueStr    = get(r, "value");
 
-                // Filtering by Norway Country Code.
-                if (!countryCode.equals(NORWAY_ISO2)) continue;
-
-                // Check if this row is from year 2024 (timeRef starts with "2024").
+                // Skip rows that are not 2024, not goods, not HS4 code.
                 if (!isYear2024(timeRef)) continue;
-
-                // Check if this is Goods data (not Services).
                 if (!isGoods(productType)) continue;
-
-                // Check if the product code is exactly 4 digits (HS4 classification).
                 if (!isHs4(code)) continue;
 
-                // Try to parse the value as a decimal number.
-                // Returns null if not a valid number, allowing us to skip non-numeric values.
+                // Parse the value, and skip if missing or invalid. Remember 0 is a valid value.
                 BigDecimal v = parseDecimalOrNull(valueStr);
-                if (v == null) continue;                      // Skip rows with non-numeric values.
-                // NOTE: do NOT skip v == 0.0; zeros are legitimate values.
+                if (v == null) continue;
 
-                // Check the value based on whether it's import or export.
+                // Get the stats object for the country. Skip if the country is not in the list.
+                CountryStats stats = allStats.get(countryCode);
+                if (stats == null) continue;
+
+                // Update import/export totals for the country and product.
+                // Add the value to the country's total imports or exports.
+                // Also add to the product-specific totals.
                 if (isImport(account)) {
-                    // Add to total imports.
-                    importsNO = importsNO.add(v);
-                    // Add to product-specific imports (merge handles both new and existing keys).
-                    // This is the map we made earlier in code.
-                    // Will then later be used to check max value when we're done.
-                    importByProductNO.merge(code, v, BigDecimal::add);
+                    stats.imports = stats.imports.add(v);
+                    stats.importsByProduct.merge(code, v, BigDecimal::add);
                 } else if (isExport(account)) {
-                    // Add to total exports
-                    // Same as with imports.
-                    exportsNO = exportsNO.add(v);
-                    // Add to product-specific exports (merge handles both new and existing keys)
-                    // Same as with imports.
-                    exportByProductNO.merge(code, v, BigDecimal::add);
+                    stats.exports = stats.exports.add(v);
+                    stats.exportsByProduct.merge(code, v, BigDecimal::add);
                 }
-                // Rows that are neither Import nor Export are silently skipped
+
+                // If it's an EU country, also add to EU aggregate ("EU").
+                // Same as above adding value to imports/exports and product-specific totals.
+                if (EU_COUNTRIES.contains(countryCode)) {
+                    CountryStats eu = allStats.get("EU");
+                    if (isImport(account)) {
+                        eu.imports = eu.imports.add(v);
+                        eu.importsByProduct.merge(code, v, BigDecimal::add);
+                    } else if (isExport(account)) {
+                        eu.exports = eu.exports.add(v);
+                        eu.exportsByProduct.merge(code, v, BigDecimal::add);
+                    }
+                }
             }
 
-            // Print the last row too, to see if anything odd at end of file.
-            System.out.println("Last row seen: " + last);
-            //  Total rows (data lines) for sanity.
-            System.out.println("Total data rows read: " + total);
+            // Print results to console.
+            printConsoleResults(allStats, hs4Descriptions);
 
-            // --- Results for Norway 2024 (Goods, HS4) ---
-            System.out.println("\n=== Norway 2024 (Goods, HS4) ===");
+            // Write results to CSV.
+            writeCsvResults(Paths.get(DEFAULT_RESULTS_PATH), allStats, hs4Descriptions);
 
-            System.out.printf("Total Imports: %.2f%n", importsNO);
-            System.out.printf("Total Exports: %.2f%n", exportsNO);
-
-            BigDecimal tradeBalance = exportsNO.subtract(importsNO);
-            System.out.printf("Trade balance (Exports - Imports): %.2f%n", tradeBalance);
-
-            // Find the product with maximum import value.
-            // I made map, then filled it with total imports, then here check the max one.
-            java.util.Map.Entry<String, BigDecimal> topImp = maxEntry(importByProductNO);
-            // Find the product with maximum export value
-            // I made map, then filled it with total exports, then here check the max one.
-            java.util.Map.Entry<String, BigDecimal> topExp = maxEntry(exportByProductNO);
-
-
-
-            // Display top imported product or n/a if no data
-            if (topImp != null) {
-                String desc = hs4Descriptions.getOrDefault(topImp.getKey(), "(unknown)");
-                System.out.printf("Most imported HS4: %s - %s (%.2f)%n", topImp.getKey(), desc, topImp.getValue());
-            } else {
-                System.out.println("Most imported HS4: n/a");
-            }
-
-            // Display top exported product or n/a if no data
-            if (topExp != null) {
-                String desc = hs4Descriptions.getOrDefault(topExp.getKey(), "(unknown)");
-                System.out.printf("Most exported HS4: %s - %s (%.2f)%n", topExp.getKey(), desc, topExp.getValue());
-            } else {
-                System.out.println("Most exported HS4: n/a");
-            }
-
-            System.out.println("(Step 3 done: Norway-only numbers computed correctly.)");
+            // Print out where results are saved.
+            System.out.println("\nResults saved to: " + Paths.get(DEFAULT_RESULTS_PATH).toAbsolutePath());
 
         } catch (IOException e) {
-            // Convert IOException to RuntimeException for simpler error handling
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Gets a required field from a CSV record.
-     * @param r The CSV record to read from
-     * @param name The column name to retrieve
-     * @return The value in that column
-     * @throws IllegalStateException if the column doesn't exist
-     */
-    private static String get(CSVRecord r, String name) {
-        try {
-            return r.get(name);
-        } catch (IllegalArgumentException e) {
-            // If column is missing, throw a more descriptive error
+    // Convert CountryStats into a CountryReport with all math done.
+    static CountryReport buildReport(String label, CountryStats stats) {
+        // Standard definition: Trade balance = Exports - Imports
+        // Task wording says "differansen mellom import og eksport", which sounds like imports - exports.
+        // I took an active decision and went with standard trade balance definition.
+        BigDecimal balance = stats.exports.subtract(stats.imports);
+
+        // Find the highest-valued imported product (code -> total value).
+        Map.Entry<String, BigDecimal> topImp = maxEntry(stats.importsByProduct);
+        // Find the highest-valued exported product.
+        Map.Entry<String, BigDecimal> topExp = maxEntry(stats.exportsByProduct);
+
+        // Package all derived values into an immutable DTO for easy, side-effect-free consumption.
+        return new CountryReport(
+                label,
+                balance,
+                topImp != null ? topImp.getKey() : null,
+                topImp != null ? topImp.getValue() : null,
+                topExp != null ? topExp.getKey() : null,
+                topExp != null ? topExp.getValue() : null
+        );
+    }
+
+    // Print formatted results to console.
+    private static void printConsoleResults(Map<String, CountryStats> allStats, Map<String, String> hs4Descriptions) {
+        System.out.println("\n" + "=".repeat(80));
+        System.out.println("TRADE REPORT 2024 - NORWAY & EU (Goods, HS4)");
+        System.out.println("=".repeat(80));
+
+        printCountryReport(buildReport("Norway (NO)", allStats.get("NO")), hs4Descriptions);
+
+        System.out.println("\n--- EU MEMBER COUNTRIES ---");
+        EU_COUNTRIES.stream()
+                .map(code -> COUNTRY_NAMES.get(code) + " (" + code + ")")
+                .sorted() // Sort alphabetically by country name
+                .forEach(label -> {
+                    String code = label.substring(label.indexOf("(") + 1, label.indexOf(")"));
+                    printCountryReport(buildReport(label, allStats.get(code)), hs4Descriptions);
+                });
+
+        System.out.println("\n--- EU TOTAL (27 countries) ---");
+        printCountryReport(buildReport("European Union (EU)", allStats.get("EU")), hs4Descriptions);
+    }
+
+    // Print one country's results.
+    private static void printCountryReport(CountryReport report, Map<String, String> hs4Descriptions) {
+        System.out.printf("\n%s:\n", report.label());
+        System.out.printf("  Trade balance (Exports - Imports): %,.2f NZD\n", report.tradeBalance());
+
+        if (report.topImportCode() != null) {
+            String desc = hs4Descriptions.getOrDefault(report.topImportCode(), "(unknown)");
+            System.out.printf("  Most imported product: %s (%s) – %,.2f NZD\n",
+                    desc, report.topImportCode(), report.topImportValue());
+        } else {
+            System.out.println("  Most imported product: n/a");
+        }
+
+        if (report.topExportCode() != null) {
+            String desc = hs4Descriptions.getOrDefault(report.topExportCode(), "(unknown)");
+            System.out.printf("  Most exported product: %s (%s) – %,.2f NZD\n",
+                    desc, report.topExportCode(), report.topExportValue());
+        } else {
+            System.out.println("  Most exported product: n/a");
+        }
+    }
+
+    // Write results to CSV file.
+    private static void writeCsvResults(Path outputPath,
+                                        Map<String, CountryStats> allStats,
+                                        Map<String, String> hs4Descriptions) throws IOException {
+
+        // Ensure parent directories exist.
+        Path parent = outputPath.toAbsolutePath().getParent();
+        if (parent != null) Files.createDirectories(parent);
+
+        // CSV writing.
+        try (BufferedWriter writer = Files.newBufferedWriter(outputPath, StandardCharsets.UTF_8);
+             CSVPrinter printer = new CSVPrinter(writer, CSVFormat.DEFAULT.builder()
+                     .setHeader("Country",
+                             "Trade_Balance_NZD",
+                             "Top_Import_Description", "Top_Import_Code", "Top_Import_Value_NZD",
+                             "Top_Export_Description", "Top_Export_Code", "Top_Export_Value_NZD")
+                     .build())) {
+
+            // Norway.
+            writeCountryRow(printer, buildReport("Norway (NO)", allStats.get("NO")), hs4Descriptions);
+
+            // EU countries sorted alphabetically by name.
+            EU_COUNTRIES.stream()
+                    .sorted(Comparator.comparing(code -> COUNTRY_NAMES.get(code)))
+                    .forEach(code -> {
+                        try {
+                            writeCountryRow(printer, buildReport(COUNTRY_NAMES.get(code) + " (" + code + ")", allStats.get(code)), hs4Descriptions);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+
+            // EU Total.
+            writeCountryRow(printer, buildReport("European Union (EU)", allStats.get("EU")), hs4Descriptions);
+        }
+    }
+
+    // Write one country's results into CSV.
+    private static void writeCountryRow(CSVPrinter printer, CountryReport report,
+                                        Map<String, String> hs4Descriptions) throws IOException {
+
+        printer.printRecord(
+                report.label(),
+                formatDecimal(report.tradeBalance()),
+
+                // Import description and fields (empty strings if no top import)
+                report.topImportCode() != null ? hs4Descriptions.getOrDefault(report.topImportCode(), "") : "",
+                report.topImportCode() != null ? report.topImportCode() : "",
+                report.topImportValue() != null ? formatDecimal(report.topImportValue()) : "",
+
+                // Export description and fields (empty strings if no top export)
+                report.topExportCode() != null ? hs4Descriptions.getOrDefault(report.topExportCode(), "") : "",
+                report.topExportCode() != null ? report.topExportCode() : "",
+                report.topExportValue() != null ? formatDecimal(report.topExportValue()) : ""
+        );
+    }
+
+    //Helpers.
+
+    // Get column value by name, throw if missing.
+    static String get(CSVRecord r, String name) {
+        try { return r.get(name); }
+        catch (IllegalArgumentException e) {
             throw new IllegalStateException("Missing expected column: " + name, e);
         }
     }
 
-    /**
-     * Gets an optional field from a CSV record.
-     * @param r The CSV record to read from
-     * @param name The column name to retrieve
-     * @return The value in that column, or empty string if column doesn't exist
-     */
-    private static String getOptional(CSVRecord r, String name) {
-        try {
-            return r.get(name);
-        } catch (IllegalArgumentException e) {
-            return ""; // optional field not present - return empty string instead of failing
-        }
+    // Filter helper, for 2024 year only.
+    static boolean isYear2024(String timeRef) {
+        return timeRef != null && timeRef.startsWith(YEAR_PREFIX);
     }
 
-    // --- Helper methods for data filtering and validation ---
-
-    /**
-     * Checks if the time reference is from year 2024.
-     * @param timeRef Time reference in YYYYMM format (e.g., "202401" for January 2024)
-     * @return true if the time reference starts with "2024"
-     */
-    private static boolean isYear2024(String timeRef) {
-        if (timeRef == null) return false;
-        // dataset uses YYYYMM (e.g., 202401..202412)
-        return timeRef.startsWith(YEAR_PREFIX);
-    }
-
-    /**
-     * Checks if the product type is "Goods" (case-insensitive).
-     * @param productType The product type string
-     * @return true if productType is "Goods" (ignoring case and whitespace)
-     */
-    private static boolean isGoods(String productType) {
+    // Filter helper, for product type "Goods" only.
+    static boolean isGoods(String productType) {
         return productType != null && productType.trim().equalsIgnoreCase("Goods");
     }
 
-    /**
-     * Checks if the code is a valid HS4 code (exactly 4 digits).
-     * @param code The product code to validate
-     * @return true if code consists of exactly 4 digits
-     */
-    private static boolean isHs4(String code) {
-        // Regular expression: \\d{4} means exactly 4 digits (0-9)
+    // Filter helper, for HS4 codes only (4 digits).
+    static boolean isHs4(String code) {
         return code != null && code.matches("\\d{4}");
     }
 
-    /**
-     * Checks if the account type is "Imports" (case-insensitive).
-     * @param account The account type string
-     * @return true if account is "Imports" (ignoring case and whitespace)
-     */
+    // Filter helper, for import account only.
     private static boolean isImport(String account) {
         return account != null && account.trim().equalsIgnoreCase("Imports");
     }
 
-    /**
-     * Checks if the account type is "Exports" (case-insensitive).
-     * @param account The account type string
-     * @return true if account is "Exports" (ignoring case and whitespace)
-     */
+    // Filter helper, for export account only.
     private static boolean isExport(String account) {
         return account != null && account.trim().equalsIgnoreCase("Exports");
     }
 
-    /**
-     * Parses a string to BigDecimal, returning null if parsing fails.
-     * @param s The string to parse
-     * @return BigDecimal value or null if not a valid number
-     */
-    // Important. Should not include the ones without value in the "value" - column as mentioned in the task.
-    private static BigDecimal parseDecimalOrNull(String s) {
-        // Return null for null or blank strings
+    // Parse decimal value without commas for parsing correctly, return null if invalid or missing.
+    static BigDecimal parseDecimalOrNull(String s) {
         if (s == null || s.isBlank()) return null;
-        try {
-            // Dataset uses dot as decimal separator, but just in case: remove commas (thousands separators).
-            // This handles formats like "1,234.56" -> "1234.56"
-            return new BigDecimal(s.replace(",", ""));
-        } catch (NumberFormatException e) {
-            // Return null if the string can't be parsed as a number
-            return null;
-        }
+        try { return new BigDecimal(s.replace(",", "")); }
+        catch (NumberFormatException e) { return null; }
     }
 
-    /**
-     * Finds the map entry with the maximum value.
-     * @param map Map of product codes to trade values
-     * @return Entry with maximum value, or null if map is empty
-     */
-    private static java.util.Map.Entry<String, BigDecimal> maxEntry(java.util.Map<String, BigDecimal> map) {
+    // Find the map entry with the maximum value, or null if map is empty.
+    static Map.Entry<String, BigDecimal> maxEntry(Map<String, BigDecimal> map) {
         if (map.isEmpty()) return null;
-        // Use Java 8 streams to find the entry with maximum value
-        // comparingByValue() compares BigDecimal values naturally
-        return map.entrySet().stream()
-                .max(java.util.Map.Entry.comparingByValue())
-                .orElse(null);
+        return map.entrySet().stream().max(Map.Entry.comparingByValue()).orElse(null);
     }
 
-    /**
-     * Utility class to load HS4 product code descriptions from goods_classification.csv.
-     * Creates a map from code (e.g., "7601") to human-readable description (e.g., "Aluminium; unwrought").
-     */
-    public static class GoodsClassificationLoader {
+    // Format BigDecimal to string with 2 decimal places for CVS files, or empty string if null.
+    private static String formatDecimal(BigDecimal v) {
+        return v == null ? "" : String.format("%.2f", v);
+    }
 
-        /**
-         * Loads HS4 descriptions into a map.
-         * @param path Path to goods_classification.csv
-         * @return Map of HS4 code -> description
-         * @throws IOException if file cannot be read
-         */
+    // Loader for goods classification CSV file. Used for printing friendly names.
+    public static class GoodsClassificationLoader {
         public static Map<String, String> loadHs4Descriptions(Path path) throws IOException {
             Map<String, String> result = new HashMap<>();
-
             try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8);
                  CSVParser parser = CSVFormat.DEFAULT.builder()
-                         .setHeader()                   // read headers
-                         .setSkipHeaderRecord(true)     // skip header row
+                         .setHeader()
+                         .setSkipHeaderRecord(true)
                          .setTrim(true)
                          .build()
                          .parse(reader)) {
 
+                // For each row, pick HS4 code and description, store in map.
                 for (CSVRecord record : parser) {
                     String hs4Code = record.get("NZHSC_Level_2_Code_HS4");
-                    String description = record.get("NZHSC_Level_2"); // the readable description
+                    String description = record.get("NZHSC_Level_2");
+
+                    // Only add valid HS4 codes (4 digits).
                     if (hs4Code != null && hs4Code.matches("\\d{4}")) {
                         result.put(hs4Code, description);
                     }
                 }
             }
-
             return result;
         }
     }
-
-    // If I end up working with this for future, but more manual without dependencies.
-    /*
-    class SimpleCsvReader {
-        // Alternative implementation without external dependencies
-        // Kept for reference but not recommended for production use
-        // as it doesn't handle quoted fields, escaped characters, etc.
-
-        public static void read(String path, Consumer<String[]> consumer) throws IOException {
-            try (BufferedReader br = new BufferedReader(new FileReader(path))) {
-                String headerLine = br.readLine(); // skip header
-                if (headerLine == null) return;
-
-                String line;
-                while ((line = br.readLine()) != null) {
-                    // Very naive split — works if no commas inside quotes
-                    String[] cols = line.split(",", -1); // -1 keeps empty strings
-                    consumer.accept(cols);
-                }
-            }
-        }
-    }
-    */
 }
