@@ -39,9 +39,8 @@ mvn exec:java -Dexec.mainClass=org.tradereport.Main -Dexec.args="path/to/output_
 
 # Og for console output.txt
 mvn exec:java -Dexec.mainClass=org.tradereport.Main > console_output.txt
+0-SNAPSHOT.jar org.tradereport.Main path/to/output_csv_full.csv
 
-# Eller jar
+#Jar
 mvn clean package
-java -cp target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar org.tradereport.Main
-eller
-java -cp target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar org.tradereport.Main path/to/output_csv_full.csv
+java -jar target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar

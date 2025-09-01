@@ -184,16 +184,19 @@ public class MainTest {
     /** ✅ helper: read our generated CSV into rows */
     private List<Map<String, String>> readCsv() {
         List<Map<String, String>> rows = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(OUTPUT_FILE, StandardCharsets.UTF_8)) {
-            String header = reader.readLine();
-            if (header == null) return rows;
-            String[] columns = header.split(",");
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(",", -1);
+        try (BufferedReader reader = Files.newBufferedReader(OUTPUT_FILE, StandardCharsets.UTF_8);
+             CSVParser parser = CSVFormat.DEFAULT.builder()
+                     .setHeader()
+                     .setSkipHeaderRecord(true)
+                     .setTrim(true)
+                     .setIgnoreSurroundingSpaces(true)
+                     .build()
+                     .parse(reader)) {
+
+            for (CSVRecord record : parser) {
                 Map<String, String> row = new HashMap<>();
-                for (int i = 0; i < columns.length && i < parts.length; i++) {
-                    row.put(columns[i], parts[i]);
+                for (String header : parser.getHeaderNames()) {
+                    row.put(header, record.get(header));
                 }
                 rows.add(row);
             }
@@ -215,7 +218,6 @@ public class MainTest {
             if (isCountry(country, "European Union")) {
                 euBalance = safeDecimal(r.get("Trade_Balance_NZD"));
             } else {
-                // sum all EU member rows (skip Norway and EU total)
                 if (country != null && !country.startsWith("Norway") && !country.startsWith("European Union")) {
                     sumMembers = sumMembers.add(safeDecimal(r.get("Trade_Balance_NZD")));
                 }
@@ -264,11 +266,13 @@ public class MainTest {
     public void testTopExportProductSelection() {
         List<Map<String, String>> rows = readCsv();
         String euExportCode = null;
+
         for (Map<String, String> r : rows) {
             if (isCountry(safeString(r.get("Country")), "European Union")) {
                 euExportCode = safeString(r.get("Top_Export_Code"));
             }
         }
+
         assertNotNull("EU export code missing", euExportCode);
         assertEquals("0204", euExportCode); // HS4 code for sheep/goat meat
     }

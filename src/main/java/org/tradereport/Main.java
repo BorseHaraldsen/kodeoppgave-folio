@@ -252,7 +252,7 @@ public class Main {
 
         if (report.topImportCode() != null) {
             String desc = hs4Descriptions.getOrDefault(report.topImportCode(), "(unknown)");
-            System.out.printf("  Most imported product: %s (%s) – %,.2f NZD\n",
+            System.out.printf("  Most imported product: %s (%s) - %,.2f NZD\n",
                     desc, report.topImportCode(), report.topImportValue());
         } else {
             System.out.println("  Most imported product: n/a");
@@ -260,7 +260,7 @@ public class Main {
 
         if (report.topExportCode() != null) {
             String desc = hs4Descriptions.getOrDefault(report.topExportCode(), "(unknown)");
-            System.out.printf("  Most exported product: %s (%s) – %,.2f NZD\n",
+            System.out.printf("  Most exported product: %s (%s) - %,.2f NZD\n",
                     desc, report.topExportCode(), report.topExportValue());
         } else {
             System.out.println("  Most exported product: n/a");
