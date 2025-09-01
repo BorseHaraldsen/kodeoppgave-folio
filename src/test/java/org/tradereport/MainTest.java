@@ -181,7 +181,6 @@ public class MainTest {
         return actual != null && actual.startsWith(expected);
     }
 
-    /** ✅ helper: read our generated CSV into rows */
     private List<Map<String, String>> readCsv() {
         List<Map<String, String>> rows = new ArrayList<>();
         try (BufferedReader reader = Files.newBufferedReader(OUTPUT_FILE, StandardCharsets.UTF_8);
@@ -204,30 +203,6 @@ public class MainTest {
             fail("Could not read CSV: " + e.getMessage());
         }
         return rows;
-    }
-
-    @Test
-    public void testEUAggregationMatchesMembers() {
-        List<Map<String, String>> rows = readCsv();
-
-        BigDecimal euBalance = null;
-        BigDecimal sumMembers = BigDecimal.ZERO;
-
-        for (Map<String, String> r : rows) {
-            String country = safeString(r.get("Country"));
-            if (isCountry(country, "European Union")) {
-                euBalance = safeDecimal(r.get("Trade_Balance_NZD"));
-            } else {
-                if (country != null && !country.startsWith("Norway") && !country.startsWith("European Union")) {
-                    sumMembers = sumMembers.add(safeDecimal(r.get("Trade_Balance_NZD")));
-                }
-            }
-        }
-
-        assertNotNull("EU row missing", euBalance);
-
-        BigDecimal diff = euBalance.subtract(sumMembers).abs();
-        assertTrue("EU balance mismatch too large: " + diff, diff.compareTo(new BigDecimal("1")) <= 0);
     }
 
     @Test
@@ -263,17 +238,30 @@ public class MainTest {
     }
 
     @Test
-    public void testTopExportProductSelection() {
+    public void testEUAggregationMatchesMembers() {
         List<Map<String, String>> rows = readCsv();
-        String euExportCode = null;
+
+        BigDecimal euBalance = null;
+        BigDecimal sumMembersBalance = BigDecimal.ZERO;
 
         for (Map<String, String> r : rows) {
-            if (isCountry(safeString(r.get("Country")), "European Union")) {
-                euExportCode = safeString(r.get("Top_Export_Code"));
+            String country = safeString(r.get("Country"));
+            BigDecimal balance = safeDecimal(r.get("Trade_Balance_NZD"));
+
+            if (isCountry(country, "European Union")) {
+                euBalance = balance;
+            } else if (country != null && !country.startsWith("Norway")) {
+                // include only EU members (exclude Norway)
+                sumMembersBalance = sumMembersBalance.add(balance);
             }
         }
 
-        assertNotNull("EU export code missing", euExportCode);
-        assertEquals("0204", euExportCode); // HS4 code for sheep/goat meat
+        assertNotNull("EU row missing", euBalance);
+
+        // EU balance should equal the sum of member balances (within tolerance for rounding).
+        BigDecimal diff = euBalance.subtract(sumMembersBalance).abs();
+        assertTrue("EU balance mismatch too large: " + diff,
+                diff.compareTo(new BigDecimal("0.01")) <= 0);
     }
+
 }

@@ -41,3 +41,6 @@ mvn exec:java -Dexec.mainClass=org.tradereport.Main > console_output.txt
 #Jar
 mvn clean package
 java -jar target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar
+
+#Test
+mvn clean test
