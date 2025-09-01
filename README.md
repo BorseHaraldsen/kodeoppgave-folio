@@ -27,9 +27,7 @@ Resultater genereres for:
 
 Krav: **Java 17+** og **Maven.**
 
-```bash
-# Bygg
-mvn package
+
 
 # Kjør (default input: output_csv_full.csv i samme mappe)
 mvn exec:java -Dexec.mainClass=org.tradereport.Main
@@ -39,7 +37,6 @@ mvn exec:java -Dexec.mainClass=org.tradereport.Main -Dexec.args="path/to/output_
 
 # Og for console output.txt
 mvn exec:java -Dexec.mainClass=org.tradereport.Main > console_output.txt
-0-SNAPSHOT.jar org.tradereport.Main path/to/output_csv_full.csv
 
 #Jar
 mvn clean package
