@@ -37,10 +37,14 @@ mvn exec:java -Dexec.mainClass=org.tradereport.Main -Dexec.args="path/to/output_
 
 # Og for console output.txt
 mvn exec:java -Dexec.mainClass=org.tradereport.Main > console_output.txt
+java -jar target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar > console_output.txt
 
 #Jar
 mvn clean package
 java -jar target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar
+
+Potentially
+mvn clean package shade:shade
 
 #Test
 mvn clean test
