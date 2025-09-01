@@ -29,20 +29,20 @@ Krav: **Java 17+** og **Maven.**
 
 
 
-# Kjør (default input: output_csv_full.csv i samme mappe)
-mvn exec:java -Dexec.mainClass=org.tradereport.Main
+# Kjør (default input: output_csv_full.csv i samme mappe)  
+mvn exec:java -Dexec.mainClass=org.tradereport.Main  
 
 # Eller angi inputfil
-mvn exec:java -Dexec.mainClass=org.tradereport.Main -Dexec.args="path/to/output_csv_full.csv">
+mvn exec:java -Dexec.mainClass=org.tradereport.Main -Dexec.args="path/to/output_csv_full.csv">  
 
 # Og for console output.txt
-mvn exec:java -Dexec.mainClass=org.tradereport.Main > console_output.txt
----
+mvn exec:java -Dexec.mainClass=org.tradereport.Main > console_output.txt  
+
 java -jar target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar > console_output.txt
 
 # Jar
-mvn clean package
-java -jar target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar
+mvn clean package  
+java -jar target/borse-kodeoppgave-folio-1.0-SNAPSHOT.jar  
 
 # Potentially
 mvn clean package shade:shade
